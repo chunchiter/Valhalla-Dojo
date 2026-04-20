@@ -52,3 +52,21 @@ td.bold { font-weight: 500; }
 .btn-renovar:hover { background: #15803d; }
 .btn-editar { padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 500; border: none; background: #2563eb; color: white; }
 .btn-editar:hover { background: #1d4ed8; }
+
+/* Modals */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: white; border-radius: 12px; padding: 1.5rem; width: 400px; }
+.modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 4px; color: #111; }
+.modal-subtitle { font-size: 13px; color: #888; margin-bottom: 1rem; }
+.modal-body { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+.modal-body label { font-size: 12px; color: #666; font-weight: 500; }
+.modal-body input, .modal-body select { padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; color: #111; background: white; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+.modal-section-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+
+/* Inactivos */
+.row-inactive { opacity: 0.5; }
+.row-inactive td.bold { text-decoration: line-through; }
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+

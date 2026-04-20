@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './App.css'
+import ModalNewMember from './components/ModalNewMember'
+import ModalRenew from './components/ModalRenew'
+import ModalEdit from './components/ModalEdit'
 
 export default function App() {
   const [members, setMembers] = useState([])
   const [filter, setFilter] = useState('todos')
   const [search, setSearch] = useState('')
-  const [stats, setStats] = useState({ total: 0, alDia: 0, porVencer: 0, vencidos: 0 })
+  const [stats, setStats] = useState({ total: 0, alDia: 0, porVencer: 0, vencidos: 0, inactivos: 0 })
+  const [showNuevo, setShowNuevo] = useState(false)
+  const [memberToRenew, setMemberToRenew] = useState(null)
+  const [memberToEdit, setMemberToEdit] = useState(null)
 
-  useEffect(() => {
-    fetchMembers()
-  }, [])
+  useEffect(() => { fetchMembers() }, [])
 
   const fetchMembers = async () => {
     const res = await axios.get('/api/members')
@@ -22,18 +26,20 @@ export default function App() {
     const today = new Date()
     const soon = new Date()
     soon.setDate(soon.getDate() + 5)
-    let alDia = 0, porVencer = 0, vencidos = 0
+    let alDia = 0, porVencer = 0, vencidos = 0, inactivos = 0
     data.forEach(m => {
+      if (!m.activo) { inactivos++; return }
       if (!m.lastMembership) { vencidos++; return }
       const venc = new Date(m.lastMembership.fechaVencimiento)
       if (venc < today) vencidos++
       else if (venc <= soon) porVencer++
       else alDia++
     })
-    setStats({ total: data.length, alDia, porVencer, vencidos })
+    setStats({ total: data.length, alDia, porVencer, vencidos, inactivos })
   }
 
   const getEstado = (member) => {
+    if (!member.activo) return 'Inactivo'
     if (!member.lastMembership) return 'Sin membresía'
     const today = new Date()
     const soon = new Date()
@@ -49,14 +55,13 @@ export default function App() {
     const matchFilter = filter === 'todos' ||
       (filter === 'aldia' && estado === 'Al día') ||
       (filter === 'porvencer' && estado === 'Por vencer') ||
-      (filter === 'vencidos' && estado === 'Vencido')
+      (filter === 'vencidos' && estado === 'Vencido') ||
+      (filter === 'inactivos' && estado === 'Inactivo')
     const matchSearch = m.nombre.toLowerCase().includes(search.toLowerCase())
     return matchFilter && matchSearch
   })
 
-  const downloadExcel = () => {
-    window.open('/api/reports/members', '_blank')
-  }
+  const downloadExcel = () => window.open('/api/reports/members', '_blank')
 
   return (
     <div className="app">
@@ -66,7 +71,7 @@ export default function App() {
           <h1>Panel principal</h1>
         </div>
         <div className="header-actions">
-          <button className="btn">+ Nuevo miembro</button>
+          <button className="btn" onClick={() => setShowNuevo(true)}>+ Nuevo miembro</button>
           <button className="btn" onClick={downloadExcel}>Descargar Excel</button>
         </div>
       </div>
@@ -76,6 +81,7 @@ export default function App() {
         <div className="stat-card green"><p>Al día</p><h2>{stats.alDia}</h2></div>
         <div className="stat-card yellow"><p>Por vencer</p><h2>{stats.porVencer}</h2></div>
         <div className="stat-card red"><p>Vencidos</p><h2>{stats.vencidos}</h2></div>
+        <div className="stat-card"><p>Inactivos</p><h2 style={{color:'#888'}}>{stats.inactivos}</h2></div>
       </div>
 
       <div className="table-card">
@@ -86,6 +92,7 @@ export default function App() {
             <option value="aldia">Al día</option>
             <option value="porvencer">Por vencer</option>
             <option value="vencidos">Vencidos</option>
+            <option value="inactivos">Inactivos</option>
           </select>
         </div>
 
@@ -98,8 +105,8 @@ export default function App() {
           <tbody>
             {filtered.map(m => {
               const estado = getEstado(m)
-              const rowClass = estado === 'Vencido' ? 'row-red' : estado === 'Por vencer' ? 'row-yellow' : ''
-              const badgeClass = estado === 'Al día' ? 'badge-green' : estado === 'Por vencer' ? 'badge-yellow' : 'badge-red'
+              const rowClass = !m.activo ? 'row-inactive' : estado === 'Vencido' ? 'row-red' : estado === 'Por vencer' ? 'row-yellow' : ''
+              const badgeClass = estado === 'Al día' ? 'badge-green' : estado === 'Por vencer' ? 'badge-yellow' : estado === 'Inactivo' ? 'badge-gray' : 'badge-red'
               return (
                 <tr key={m.id} className={rowClass}>
                   <td className="bold">{m.nombre}</td>
@@ -108,8 +115,8 @@ export default function App() {
                   <td>${m.lastMembership?.montoPagado ?? 0}</td>
                   <td><span className={`badge ${badgeClass}`}>{estado}</span></td>
                   <td className="actions">
-                    <button className="btn-renovar">Renovar</button>
-                    <button className="btn-editar">Editar</button>
+                    <button className="btn-renovar" onClick={() => setMemberToRenew(m)}>Renovar</button>
+                    <button className="btn-editar" onClick={() => setMemberToEdit(m)}>Editar</button>
                   </td>
                 </tr>
               )
@@ -117,6 +124,10 @@ export default function App() {
           </tbody>
         </table>
       </div>
+
+      {showNuevo && <ModalNewMember onClose={() => setShowNuevo(false)} onSave={fetchMembers} />}
+      {memberToRenew && <ModalRenew member={memberToRenew} onClose={() => setMemberToRenew(null)} onSave={fetchMembers} />}
+      {memberToEdit && <ModalEdit member={memberToEdit} onClose={() => setMemberToEdit(null)} onSave={fetchMembers} />}
     </div>
   )
 }
