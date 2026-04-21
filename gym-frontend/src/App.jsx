@@ -4,6 +4,7 @@ import './App.css'
 import ModalNewMember from './components/ModalNewMember'
 import ModalRenew from './components/ModalRenew'
 import ModalEdit from './components/ModalEdit'
+import ModalHistorial from './components/ModalHistorial'
 
 export default function App() {
   const [members, setMembers] = useState([])
@@ -13,6 +14,7 @@ export default function App() {
   const [showNuevo, setShowNuevo] = useState(false)
   const [memberToRenew, setMemberToRenew] = useState(null)
   const [memberToEdit, setMemberToEdit] = useState(null)
+  const [memberHistorial, setMemberHistorial] = useState(null)
 
   useEffect(() => { fetchMembers() }, [])
 
@@ -109,7 +111,7 @@ export default function App() {
               const badgeClass = estado === 'Al día' ? 'badge-green' : estado === 'Por vencer' ? 'badge-yellow' : estado === 'Inactivo' ? 'badge-gray' : 'badge-red'
               return (
                 <tr key={m.id} className={rowClass}>
-                  <td className="bold">{m.nombre}</td>
+                  <td className="bold nombre-link" onClick={() => setMemberHistorial(m)}>{m.nombre}</td>
                   <td>{m.telefono}</td>
                   <td>{m.lastMembership?.fechaVencimiento ?? 'N/A'}</td>
                   <td>${m.lastMembership?.montoPagado ?? 0}</td>
@@ -128,6 +130,7 @@ export default function App() {
       {showNuevo && <ModalNewMember onClose={() => setShowNuevo(false)} onSave={fetchMembers} />}
       {memberToRenew && <ModalRenew member={memberToRenew} onClose={() => setMemberToRenew(null)} onSave={fetchMembers} />}
       {memberToEdit && <ModalEdit member={memberToEdit} onClose={() => setMemberToEdit(null)} onSave={fetchMembers} />}
+      {memberHistorial && <ModalHistorial member={memberHistorial} onClose={() => setMemberHistorial(null)} />}
     </div>
   )
 }
