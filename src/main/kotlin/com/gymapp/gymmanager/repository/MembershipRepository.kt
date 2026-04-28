@@ -9,11 +9,14 @@ interface MembershipRepository : JpaRepository<Membership, Long> {
 
     fun findByMemberId(memberId: Long): List<Membership>
 
+    fun deleteByMemberId(memberId: Long)
+
     @Query("SELECT m FROM Membership m WHERE m.fechaVencimiento < :today")
     fun findExpired(today: LocalDate): List<Membership>
 
     @Query("SELECT m FROM Membership m WHERE m.fechaVencimiento BETWEEN :today AND :soon")
     fun findExpiringSoon(today: LocalDate, soon: LocalDate): List<Membership>
 
-    fun deleteByMemberId(memberId: Long)
+    @Query("SELECT m FROM Membership m WHERE m.member.id = :memberId AND m.tipo = 'CLASES' AND m.clasesRestantes > 0")
+    fun findActiveClasesByMemberId(memberId: Long): List<Membership>
 }

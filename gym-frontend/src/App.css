@@ -77,3 +77,117 @@ td.bold { font-weight: 500; }
 /* Historial */
 .nombre-link { cursor: pointer; }
 .nombre-link:hover { color: #2563eb; text-decoration: underline; }
+
+.btn-clase { padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 500; border: none; background: #eff6ff; color: #2563eb; }
+.btn-clase:hover { background: #dbeafe; }
+
+/* Clases badges en tabla */
+.badge-clases {
+  font-size: 12px;
+  color: #2563eb;
+  font-weight: 500;
+}
+.badge-clases-agotadas {
+  font-size: 12px;
+  color: #dc2626;
+  font-weight: 600;
+  background: #fee2e2;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* ModalNewMember */
+.nm-modal {
+  width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Fila de dos columnas */
+.nm-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.nm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Separación antes del título de membresía */
+.nm-section-gap {
+  margin-top: 12px;
+}
+
+/* Checkboxes tipo membresía */
+.nm-tipo-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.nm-check-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #111;
+}
+
+/* Caja de mensualidad / clases */
+.nm-section-box {
+  background: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nm-box-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Disciplinas en fila */
+.nm-disciplinas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Fila fecha + monto */
+.nm-venc-row {
+  margin-top: 2px;
+}
+
+/* Hint texto pequeño junto al label */
+.nm-hint {
+  font-size: 10px;
+  color: #aaa;
+  font-weight: 400;
+}
+
+/* Paquetes de clases en columna */
+.nm-paquetes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nm-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #111;
+}

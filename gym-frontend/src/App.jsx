@@ -67,11 +67,17 @@ export default function App() {
 
   const downloadExcel = () => window.open('/api/reports/members', '_blank')
 
+  const descontarClase = async (membershipId) => {
+    if (!membershipId) return
+    await axios.put(`/api/memberships/${membershipId}/descontar-clase`)
+    fetchMembers()
+  }
+
   return (
     <div className="app">
       <div className="header">
         <div>
-          <p className="subtitle">Gym Manager</p>
+          <p className="subtitle">VALHALLA DOJO</p>
           <h1>Panel principal</h1>
         </div>
         <div className="header-actions">
@@ -104,22 +110,44 @@ export default function App() {
         <table>
           <thead>
             <tr>
-              <th>Nombre</th><th>Teléfono</th><th>Vencimiento</th><th>Último pago</th><th>Estado</th><th>Acciones</th>
+              <th>Nombre</th><th>Teléfono</th><th>Vencimiento</th><th>Último pago</th><th>Clases</th><th>Estado</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(m => {
               const estado = getEstado(m)
-              const rowClass = !m.activo ? 'row-inactive' : estado === 'Vencido' ? 'row-red' : estado === 'Por vencer' ? 'row-yellow' : ''
-              const badgeClass = estado === 'Al día' ? 'badge-green' : estado === 'Por vencer' ? 'badge-yellow' : estado === 'Inactivo' ? 'badge-gray' : 'badge-red'
+              const rowClass = !m.activo ? 'row-inactive'
+                : estado === 'Vencido' ? 'row-red'
+                : estado === 'Por vencer' ? 'row-yellow' : ''
+              const badgeClass = estado === 'Al día' ? 'badge-green'
+                : estado === 'Por vencer' ? 'badge-yellow'
+                : estado === 'Inactivo' ? 'badge-gray' : 'badge-red'
+
+              // Agotadas: solo si el backend reporta que tuvo clases y se acabaron
+              const agotadas = m.lastClasesAgotadas === true
+              const tieneClasesActivas = (m.clasesRestantes ?? 0) > 0
+
               return (
                 <tr key={m.id} className={rowClass}>
                   <td className="bold nombre-link" onClick={() => setMemberHistorial(m)}>{m.nombre}</td>
                   <td>{m.telefono}</td>
                   <td>{m.lastMembership?.fechaVencimiento ?? 'N/A'}</td>
                   <td>${m.lastMembership?.montoPagado ?? 0}</td>
+                  <td>
+                    {agotadas && !tieneClasesActivas && (
+                      <span className="badge-clases-agotadas">🎯 Agotadas</span>
+                    )}
+                    {tieneClasesActivas && (
+                      <span className="badge-clases">
+                        🎯 {m.clasesRestantes}/{m.clasesTotal} clases
+                      </span>
+                    )}
+                  </td>
                   <td><span className={`badge ${badgeClass}`}>{estado}</span></td>
                   <td className="actions">
+                    {tieneClasesActivas && (
+                      <button className="btn-clase" onClick={() => descontarClase(m.lastClasesId)}>-1 clase</button>
+                    )}
                     <button className="btn-renovar" onClick={() => setMemberToRenew(m)}>Renovar</button>
                     <button className="btn-editar" onClick={() => setMemberToEdit(m)}>Editar</button>
                   </td>

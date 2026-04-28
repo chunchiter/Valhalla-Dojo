@@ -45,9 +45,10 @@ class ExcelService(
 
         members.forEach { m ->
             if (!m.activo) { inactivos++; return@forEach }
-            val last = membershipRepository.findByMemberId(m.id!!).maxByOrNull { it.fechaVencimiento }
+            val last = membershipRepository.findByMemberId(m.id!!).maxByOrNull { it.fechaVencimiento ?: java.time.LocalDate.MIN }
             if (last == null) { sinMembresia++; return@forEach }
             val venc = last.fechaVencimiento
+            if (venc == null) { sinMembresia++; return@forEach }
             when {
                 venc.isBefore(today) -> vencidos++
                 venc.isBefore(today.plusDays(5)) -> porVencer++
@@ -99,7 +100,8 @@ class ExcelService(
             fillPattern = FillPatternType.SOLID_FOREGROUND
         }
 
-        val headers = listOf("ID", "Nombre", "Teléfono", "Email", "Activo", "Último Pago", "Vencimiento", "Monto", "Método", "Estado")
+        // ── Columna nueva: "Membresía" indica el tipo(s) activos ──
+        val headers = listOf("ID", "Nombre", "Teléfono", "Email", "Activo", "Membresía", "Último Pago", "Vencimiento", "Monto", "Método", "Estado")
         val headerRow = sheet.createRow(0)
         headers.forEachIndexed { i, title ->
             headerRow.createCell(i).apply {
@@ -110,9 +112,8 @@ class ExcelService(
 
         members.forEachIndexed { index, member ->
             val row = sheet.createRow(index + 1)
-            val lastMembership = membershipRepository
-                .findByMemberId(member.id!!)
-                .maxByOrNull { it.fechaVencimiento }
+            val memberships = membershipRepository.findByMemberId(member.id!!)
+            val lastMembership = memberships.maxByOrNull { it.fechaVencimiento ?: java.time.LocalDate.MIN }
 
             val vencimiento = lastMembership?.fechaVencimiento
             val estado = when {
@@ -121,6 +122,15 @@ class ExcelService(
                 vencimiento.isBefore(today) -> "Vencido"
                 vencimiento.isBefore(today.plusDays(5)) -> "Por vencer"
                 else -> "Al día"
+            }
+
+            // Calcular tipos de membresía únicos que tiene el miembro
+            val tipos = memberships.mapNotNull { it.tipo }.toSet()
+            val tipoLabel = when {
+                tipos.contains("MENSUALIDAD") && tipos.contains("CLASES") -> "Mensualidad + Clases"
+                tipos.contains("MENSUALIDAD") -> "Mensualidad"
+                tipos.contains("CLASES") -> "Por clases"
+                else -> "N/A"
             }
 
             val rowStyle = when (estado) {
@@ -136,23 +146,25 @@ class ExcelService(
             row.createCell(2).setCellValue(member.telefono)
             row.createCell(3).setCellValue(member.email)
             row.createCell(4).setCellValue(if (member.activo) "Sí" else "No")
-            row.createCell(5).setCellValue(lastMembership?.fechaPago?.toString() ?: "N/A")
-            row.createCell(6).setCellValue(vencimiento?.toString() ?: "N/A")
-            row.createCell(7).setCellValue(lastMembership?.montoPagado?.toDouble() ?: 0.0)
-            row.createCell(8).setCellValue(lastMembership?.metodoPago ?: "N/A")
-            row.createCell(9).setCellValue(estado)
+            row.createCell(5).setCellValue(tipoLabel)                                          // ← NUEVO
+            row.createCell(6).setCellValue(lastMembership?.fechaPago?.toString() ?: "N/A")
+            row.createCell(7).setCellValue(vencimiento?.toString() ?: "N/A")
+            row.createCell(8).setCellValue(lastMembership?.montoPagado?.toDouble() ?: 0.0)
+            row.createCell(9).setCellValue(lastMembership?.metodoPago ?: "N/A")
+            row.createCell(10).setCellValue(estado)
 
             if (rowStyle != null) {
-                (0..9).forEach { row.getCell(it)?.cellStyle = rowStyle }
+                (0..10).forEach { row.getCell(it)?.cellStyle = rowStyle }
             }
         }
 
-        (0..9).forEach { sheet.autoSizeColumn(it) }
+        (0..10).forEach { sheet.autoSizeColumn(it) }
 
         // ── Hoja 3: Historial completo ───────────────────────────────
         val historial = workbook.createSheet("Historial pagos")
 
-        val hHeaders = listOf("Miembro", "Teléfono", "Fecha Pago", "Vencimiento", "Monto", "Método")
+        // ── Columnas nuevas: "Tipo" y "Detalle" ──
+        val hHeaders = listOf("Miembro", "Teléfono", "Fecha Pago", "Vencimiento", "Tipo", "Detalle", "Monto", "Método")
         val hHeaderRow = historial.createRow(0)
         hHeaders.forEachIndexed { i, title ->
             hHeaderRow.createCell(i).apply {
@@ -167,16 +179,36 @@ class ExcelService(
                 .sortedByDescending { it.fechaPago }
             pagos.forEach { pago ->
                 val row = historial.createRow(rowIndex++)
+
+                // Tipo legible
+                val tipoStr = when (pago.tipo) {
+                    "MENSUALIDAD" -> "Mensualidad"
+                    "CLASES" -> "Por clases"
+                    else -> pago.tipo ?: "N/A"
+                }
+
+                // Detalle: para clases muestra cantidad, para mensualidad muestra disciplinas
+                val detalleStr = when (pago.tipo) {
+                    "CLASES" -> {
+                        val total = pago.clasesTotal ?: 0
+                        if (total == 1) "1 clase suelta" else "$total clases"
+                    }
+                    "MENSUALIDAD" -> pago.disciplina ?: "N/A"
+                    else -> "N/A"
+                }
+
                 row.createCell(0).setCellValue(member.nombre)
                 row.createCell(1).setCellValue(member.telefono)
                 row.createCell(2).setCellValue(pago.fechaPago.toString())
-                row.createCell(3).setCellValue(pago.fechaVencimiento.toString())
-                row.createCell(4).setCellValue(pago.montoPagado.toDouble())
-                row.createCell(5).setCellValue(pago.metodoPago)
+                row.createCell(3).setCellValue(pago.fechaVencimiento?.toString() ?: "N/A")
+                row.createCell(4).setCellValue(tipoStr)           // ← NUEVO
+                row.createCell(5).setCellValue(detalleStr)        // ← NUEVO
+                row.createCell(6).setCellValue(pago.montoPagado.toDouble())
+                row.createCell(7).setCellValue(pago.metodoPago)
             }
         }
 
-        (0..5).forEach { historial.autoSizeColumn(it) }
+        (0..7).forEach { historial.autoSizeColumn(it) }
 
         val out = ByteArrayOutputStream()
         workbook.write(out)
@@ -206,7 +238,6 @@ class ExcelService(
             }
         }
 
-        // Fila de ejemplo
         val example = sheet.createRow(1)
         example.createCell(0).setCellValue("Juan Pérez")
         example.createCell(1).setCellValue("9611234567")
@@ -296,5 +327,4 @@ class ExcelService(
         workbook.close()
         return mapOf("imported" to imported, "errors" to errors, "errorDetails" to errorList)
     }
-
 }

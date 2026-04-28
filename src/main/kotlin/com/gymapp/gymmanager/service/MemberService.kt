@@ -14,9 +14,28 @@ class MemberService(
 
     fun getAll(): List<Map<String, Any?>> {
         return memberRepository.findAll().map { member ->
-            val lastMembership = membershipRepository
-                .findByMemberId(member.id!!)
-                .maxByOrNull { it.fechaVencimiento }
+            val memberships = membershipRepository.findByMemberId(member.id!!)
+
+            val lastMensualidad = memberships
+                .filter { it.tipo == "MENSUALIDAD" }
+                .maxByOrNull { it.fechaVencimiento ?: java.time.LocalDate.MIN }
+
+            // Clases con restantes > 0 (activas)
+            val clasesActivas = memberships
+                .filter { it.tipo == "CLASES" && (it.clasesRestantes ?: 0) > 0 }
+
+            // Clases agotadas: tiene membresía de clases pero todas en 0
+            val todasClases = memberships.filter { it.tipo == "CLASES" }
+            val tieneClases = todasClases.isNotEmpty()
+            val lastClasesAgotadas = tieneClases && clasesActivas.isEmpty()
+
+            val clasesRestantes = clasesActivas.sumOf { it.clasesRestantes ?: 0 }
+            val clasesTotal = clasesActivas.sumOf { it.clasesTotal ?: 0 }
+            val lastClases = clasesActivas.maxByOrNull { it.fechaPago }
+
+            // Disciplinas de mensualidad activa
+            val disciplinasMensualidad = lastMensualidad?.disciplina ?: ""
+
             mapOf(
                 "id" to member.id,
                 "nombre" to member.nombre,
@@ -24,7 +43,13 @@ class MemberService(
                 "email" to member.email,
                 "fechaRegistro" to member.fechaRegistro,
                 "activo" to member.activo,
-                "lastMembership" to lastMembership
+                "lastMembership" to lastMensualidad,
+                "clasesRestantes" to clasesRestantes,
+                "clasesTotal" to clasesTotal,
+                "lastClasesId" to lastClases?.id,
+                "lastClasesAgotadas" to lastClasesAgotadas,   // true si tuvo clases y se agotaron
+                "disciplinasMensualidad" to disciplinasMensualidad, // disciplinas guardadas
+                "disciplinas" to memberships.map { it.disciplina }.filter { it.isNotBlank() }.distinct()
             )
         }
     }
@@ -49,5 +74,4 @@ class MemberService(
         membershipRepository.deleteByMemberId(id)
         memberRepository.deleteById(id)
     }
-
 }

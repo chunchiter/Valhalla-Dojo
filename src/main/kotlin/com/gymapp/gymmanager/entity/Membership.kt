@@ -19,14 +19,26 @@ data class Membership(
     val member: Member = Member(),
 
     @Column(nullable = false)
-    val fechaPago: LocalDate = LocalDate.now(),
+    val tipo: String = "MENSUALIDAD", // MENSUALIDAD o CLASES
 
     @Column(nullable = false)
-    val fechaVencimiento: LocalDate = LocalDate.now(),
+    val disciplina: String = "",
+
+    @Column(nullable = false)
+    val fechaPago: LocalDate = LocalDate.now(),
+
+    @Column
+    val fechaVencimiento: LocalDate? = null, // null si es por clases
 
     @Column(nullable = false)
     val montoPagado: BigDecimal = BigDecimal.ZERO,
 
     @Column(nullable = false)
-    val metodoPago: String = "Efectivo"
+    val metodoPago: String = "Efectivo",
+
+    @Column
+    val clasesTotal: Int? = null, // solo si tipo = CLASES
+
+    @Column
+    val clasesRestantes: Int? = null // solo si tipo = CLASES
 )

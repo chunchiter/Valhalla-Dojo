@@ -27,13 +27,21 @@ class MembershipController(
         val member = memberService.getById(request.memberId)
         val membership = Membership(
             member = member,
+            tipo = request.tipo,
+            disciplina = request.disciplina,
             fechaPago = request.fechaPago,
             fechaVencimiento = request.fechaVencimiento,
             montoPagado = request.montoPagado,
-            metodoPago = request.metodoPago
+            metodoPago = request.metodoPago,
+            clasesTotal = request.clasesTotal,
+            clasesRestantes = request.clasesTotal
         )
         return ResponseEntity.ok(membershipService.create(membership))
     }
+
+    @PutMapping("/{id}/descontar-clase")
+    fun descontarClase(@PathVariable id: Long) =
+        ResponseEntity.ok(membershipService.descontarClase(id))
 
     @GetMapping("/expired")
     fun getExpired() = ResponseEntity.ok(membershipService.getExpired())
