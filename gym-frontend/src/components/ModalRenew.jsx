@@ -13,17 +13,15 @@ const PAQUETES_CLASES = [
 ]
 
 export default function ModalRenew({ member, onClose, onSave }) {
-  // Precargar disciplinas guardadas (vienen como "Espada, Vikingo" desde el backend)
   const disciplinasGuardadas = member.disciplinasMensualidad
     ? member.disciplinasMensualidad.split(',').map(d => d.trim()).filter(Boolean)
     : []
 
-  // Precargar si tenía mensualidad o clases activas
   const teniaMensualidad = !!member.lastMembership
   const teniaClases = (member.clasesRestantes ?? 0) > 0 || member.lastClasesAgotadas === true
 
   const [tieneMensualidad, setTieneMensualidad] = useState(teniaMensualidad)
-  const [tieneClases, setTieneClases] = useState(false) // renovar clases siempre desde cero
+  const [tieneClases, setTieneClases] = useState(false)
   const [disciplinasMensualidad, setDisciplinasMensualidad] = useState(disciplinasGuardadas)
   const [paqueteClases, setPaqueteClases] = useState(null)
   const [fechaVencimiento, setFechaVencimiento] = useState(
@@ -122,14 +120,14 @@ export default function ModalRenew({ member, onClose, onSave }) {
                   </label>
                 ))}
               </div>
-              <label>Fecha de vencimiento</label>
+              <label style={{ display: 'block', marginBottom: '4px' }}>Fecha de vencimiento</label>
               <input
                 type="date"
                 value={fechaVencimiento}
                 onChange={e => setFechaVencimiento(e.target.value)}
                 style={{ marginBottom: '8px' }}
               />
-              <label>Monto</label>
+              <label style={{ display: 'block', marginBottom: '4px' }}>Monto</label>
               <input
                 type="number"
                 value={monto}

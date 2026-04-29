@@ -27,6 +27,7 @@ export default function ModalNewMember({ onClose, onSave }) {
     fechaPago: today,
     metodoPago: 'Efectivo'
   })
+  const [montoInscripcion, setMontoInscripcion] = useState('')
   const [tieneMensualidad, setTieneMensualidad] = useState(false)
   const [tieneClases, setTieneClases] = useState(false)
   const [disciplinasMensualidad, setDisciplinasMensualidad] = useState([])
@@ -49,7 +50,7 @@ export default function ModalNewMember({ onClose, onSave }) {
   }
 
   const handleSubmit = async () => {
-    if (!form.nombre || !form.telefono || !form.email)
+    if (!form.nombre || !form.telefono)
       return alert('Completa los datos personales')
     if (!tieneMensualidad && !tieneClases)
       return alert('Selecciona al menos un tipo de membresía')
@@ -64,6 +65,18 @@ export default function ModalNewMember({ onClose, onSave }) {
       email: form.email
     })
     const memberId = memberRes.data.id
+
+    // Guardar inscripción (siempre, con el monto que pusieron, puede ser 0)
+    await axios.post('/api/memberships', {
+      memberId,
+      tipo: 'Inscripcion',
+      disciplina: 'Inscripción',
+      fechaPago: form.fechaPago,
+      fechaVencimiento: null,
+      montoPagado: parseFloat(montoInscripcion) || 0,
+      metodoPago: form.metodoPago,
+      clasesTotal: null
+    })
 
     if (tieneMensualidad) {
       await axios.post('/api/memberships', {
@@ -126,6 +139,19 @@ export default function ModalNewMember({ onClose, onSave }) {
             </div>
           </div>
 
+          {/* Monto de inscripción siempre visible, centrado */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '4px 0 8px' }}>
+            <label style={{ marginBottom: '4px' }}>Monto de inscripción</label>
+            <input
+              type="number"
+              value={montoInscripcion}
+              onChange={e => setMontoInscripcion(e.target.value)}
+              placeholder="0"
+              min="0"
+              style={{ width: '160px', textAlign: 'center' }}
+            />
+          </div>
+
           <p className="modal-section-title nm-section-gap">Tipo de membresía</p>
 
           <div className="nm-tipo-row">
@@ -150,7 +176,6 @@ export default function ModalNewMember({ onClose, onSave }) {
                   </label>
                 ))}
               </div>
-
               <div className="nm-row nm-venc-row">
                 <div className="nm-field">
                   <label>
